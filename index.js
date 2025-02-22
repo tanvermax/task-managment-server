@@ -96,18 +96,16 @@ async function run() {
 
     // task read
     app.get('/addedtask', async (req, res) => {
-      const { email } = req.query;
-      if (!email) {
-        return res.status(400).json({ error: 'Email query parameter is required' });
-      }
       try {
-        const tasks = await Task.find({ userEmail: email });
-        res.json(tasks);
+        console.log("Fetching tasks...");
+        const cursor = await taskCollection.find().toArray();
+        console.log("user fetched:", cursor);
+        res.send(cursor);
       } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch tasks' });
+        console.error("Error fetching tasks:", error);
+        res.status(500).send("Internal Server Error");
       }
     });
-    
 
     // task creat
     app.post("/addedtask", async (req, res) => {
