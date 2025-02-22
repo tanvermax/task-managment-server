@@ -21,7 +21,7 @@ app.use(express.json()); // Parse JSON body
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173/",
+    origin: "https://task-management-b4adc.web.app/",
     methods: ["GET", "POST"],
   },
 
