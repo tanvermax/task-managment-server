@@ -33,6 +33,20 @@ async function run() {
 
     const taskCollection = client.db('taskmanage').collection("task");
 
+
+    // data delete 
+
+
+    app.delete('/task/:id', async (req, res)=>{
+      const id = req.params.id;
+      console.log(id);
+      const query = {_id : new ObjectId(id)}
+      const result = await taskCollection.deleteOne(query);
+      res.send(result);
+    })
+
+
+
     app.put("/updatetask/:id", async (req, res) => {
       try {
         const id = req.params.id;
@@ -81,11 +95,17 @@ async function run() {
 
     // task read
     app.get('/addedtask', async (req, res) => {
-      const cursor = await taskCollection.find().toArray();
-      // console.log("the data  ",cursor);
-
-      res.send(cursor);
-    })
+      try {
+          console.log("Fetching tasks...");
+          const cursor = await taskCollection.find().toArray();
+          console.log("Tasks fetched:", cursor);
+          res.send(cursor);
+      } catch (error) {
+          console.error("Error fetching tasks:", error);
+          res.status(500).send("Internal Server Error");
+      }
+  });
+  
     // task creat
     app.post("/addedtask", async (req, res) => {
 
