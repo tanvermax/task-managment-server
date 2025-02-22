@@ -32,15 +32,16 @@ async function run() {
     // await client.db("admin").command({ ping: 1 });
 
     const taskCollection = client.db('taskmanage').collection("task");
+    const userCollection = client.db('taskmanage').collection("user");
 
 
     // data delete 
 
 
-    app.delete('/task/:id', async (req, res)=>{
+    app.delete('/task/:id', async (req, res) => {
       const id = req.params.id;
       console.log(id);
-      const query = {_id : new ObjectId(id)}
+      const query = { _id: new ObjectId(id) }
       const result = await taskCollection.deleteOne(query);
       res.send(result);
     })
@@ -95,17 +96,19 @@ async function run() {
 
     // task read
     app.get('/addedtask', async (req, res) => {
-      try {
-          console.log("Fetching tasks...");
-          const cursor = await taskCollection.find().toArray();
-          console.log("Tasks fetched:", cursor);
-          res.send(cursor);
-      } catch (error) {
-          console.error("Error fetching tasks:", error);
-          res.status(500).send("Internal Server Error");
+      const { email } = req.query;
+      if (!email) {
+        return res.status(400).json({ error: 'Email query parameter is required' });
       }
-  });
-  
+      try {
+        const tasks = await Task.find({ userEmail: email });
+        res.json(tasks);
+      } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch tasks' });
+      }
+    });
+    
+
     // task creat
     app.post("/addedtask", async (req, res) => {
 
@@ -116,6 +119,28 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/user', async (req, res) => {
+      try {
+        console.log("Fetching tasks...");
+        const cursor = await userCollection.find().toArray();
+        console.log("user fetched:", cursor);
+        res.send(cursor);
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+        res.status(500).send("Internal Server Error");
+      }
+    });
+
+
+    // user
+    app.post("/user", async (req, res) => {
+
+      const task = req.body;
+      const result = await userCollection.insertOne(task);
+      // console.log(result);
+
+      res.send(result);
+    })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
