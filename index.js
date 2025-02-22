@@ -1,18 +1,51 @@
 const express = require("express");
+const http = require("http"); 
 const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
+const { Server } = require("socket.io")
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+
+
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.toqnk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+
 
 // Middleware
 app.use(cors());
 app.use(express.json()); // Parse JSON body
 
 
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.toqnk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173/",
+    methods: ["GET", "POST"],
+  },
+
+})
+
+ io.on("connection",(socket)=>{
+  console.log("New client connected:", socket.id);
+  
+
+  // listen
+  socket.on("updateTask", (task) => {
+    console.log("Task updated:", task);
+
+    // Broadcast the updated task to all clients
+    io.emit("taskUpdated", task);
+  });
+
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+  });
+
+ })
+
 
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
