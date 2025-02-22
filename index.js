@@ -23,6 +23,7 @@ const io = new Server(server, {
   cors: {
     origin: "https://task-management-b4adc.web.app/",
     methods: ["GET", "POST"],
+    credentials: true,
   },
 
 })
