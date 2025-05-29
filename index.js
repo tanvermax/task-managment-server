@@ -2,6 +2,11 @@ const express = require("express");
 const http = require("http");
 const mongoose = require("mongoose");
 const cors = require("cors");
+
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+
+
 require("dotenv").config();
 const { Server } = require("socket.io");
 const { MongoClient, ObjectId } = require("mongodb");
@@ -12,17 +17,24 @@ const server = http.createServer(app);
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.toqnk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173',
+    'https://task-management-b4adc.web.app',
+  ],
+  credentials: true,
+}));
+
 app.use(express.json());
+app.use(cookieParser());
 
 const io = new Server(server, {
   cors: {
-    origin: "https://task-management-b4adc.web.app/",
+    origin: "https://task-management-b4adc.web.app",
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
-
+ 
 io.on("connection", (socket) => {
   console.log("✅ Client connected");
 
@@ -36,6 +48,34 @@ io.on("connection", (socket) => {
   });
 });
 
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production', // HTTPS-only in production
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Required for cross-site cookies
+  maxAge: 5 * 60 * 60 * 1000, // 5 hours (matches JWT expiry)
+};
+
+
+
+const verify = (req, res, next) => {
+  const token = req?.cookies?.token;
+
+  if (!token) {
+    return res.status(401).send({ message: 'Unatuhorized access' })
+  }
+  // verify
+  jwt.verify(token, process.env.JWT_TOKEN, (err, decode) => {
+    if (err) {
+      return res.status(401).send({ message: 'Unatuhorized access' })
+    }
+    req.user = decode;
+    next();
+  })
+
+}
+
+
 const client = new MongoClient(uri, {
   serverApi: { version: "1", strict: true, deprecationErrors: true },
 });
@@ -47,6 +87,18 @@ async function run() {
 
     const taskCollection = client.db("taskmanage").collection("task");
     const userCollection = client.db("taskmanage").collection("user");
+
+
+
+    app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.JWT_TOKEN,
+        { expiresIn: '5h' });
+
+      res.cookie('token', token, cookieOptions)
+        .send({ success: true })
+    })
+
 
     app.delete("/task/:id", async (req, res) => {
       const id = req.params.id;
@@ -70,7 +122,7 @@ async function run() {
       res.json(result);
     });
 
-    app.get("/addedtask", async (req, res) => {
+    app.get("/addedtask",verify,  async (req, res) => {
       try {
         const tasks = await taskCollection.find().toArray();
         res.send(tasks);
