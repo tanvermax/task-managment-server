@@ -128,6 +128,42 @@ async function run() {
       res.json(result);
     });
 
+
+    app.get('/updatetask/:id', async (req, res) => {
+
+      const id = req.params.id;
+
+      const query = { _id: new ObjectId(id) }
+      const service = await taskCollection.findOne(query);
+      res.send(service)
+    })
+
+
+    app.put('/updatetask/:id', async (req, res) => {
+      const id = req.params;
+
+      const updatedData = req.body;
+
+
+      const query = { _id: new ObjectId(id) }
+    
+
+      const data = {
+        $set: {
+          title: updatedData.title,
+          description: updatedData.description,
+          date: updatedData.date,
+          priority: updatedData.priority,
+          status: updatedData.status,
+        }
+      }
+
+      const service = await taskCollection.updateOne(query, data);
+      res.send(service)
+    })
+
+    
+
     app.get("/addedtask",  async (req, res) => {
       try {
         const tasks = await taskCollection.find().toArray();
