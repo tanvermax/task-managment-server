@@ -46,6 +46,7 @@ async function run() {
     console.log("✅ Connected to MongoDB");
 
     const taskCollection = client.db("taskmanage").collection("task");
+    const userCollection = client.db("taskmanage").collection("user");
 
     app.delete("/task/:id", async (req, res) => {
       const id = req.params.id;
@@ -81,6 +82,23 @@ async function run() {
     app.post("/addedtask", async (req, res) => {
       const task = req.body;
       const result = await taskCollection.insertOne(task);
+      res.send(result);
+    });
+
+
+    app.get("/user", async (req, res) => {
+      try {
+        const tasks = await userCollection.find().toArray();
+        res.send(tasks);
+      } catch (error) {
+        res.status(500).send("Error fetching tasks");
+      }
+    });
+
+
+    app.post("/user", async (req, res) => {
+      const user = req.body;
+      const result = await userCollection.insertOne(user);
       res.send(result);
     });
 
