@@ -3,7 +3,10 @@ const http = require("http");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
+
+// ?jwt?
 const jwt = require('jsonwebtoken');
+
 const cookieParser = require('cookie-parser');
 
 
@@ -58,22 +61,22 @@ const cookieOptions = {
 
 
 
-const verify = (req, res, next) => {
-  const token = req?.cookies?.token;
+// const verify = (req, res, next) => {
+//   const token = req?.cookies?.token;
 
-  if (!token) {
-    return res.status(401).send({ message: 'Unatuhorized access' })
-  }
-  // verify
-  jwt.verify(token, process.env.JWT_TOKEN, (err, decode) => {
-    if (err) {
-      return res.status(401).send({ message: 'Unatuhorized access' })
-    }
-    req.user = decode;
-    next();
-  })
+//   if (!token) {
+//     return res.status(401).send({ message: 'Unatuhorized access' })
+//   }
+//   // verify
+//   jwt.verify(token, process.env.JWT_TOKEN, (err, decode) => {
+//     if (err) {
+//       return res.status(401).send({ message: 'Unatuhorized access' })
+//     }
+//     req.user = decode;
+//     next();
+//   })
 
-}
+// }
 
 
 const client = new MongoClient(uri, {
@@ -95,7 +98,10 @@ async function run() {
       const token = jwt.sign(user, process.env.JWT_TOKEN,
         { expiresIn: '5h' });
 
-      res.cookie('token', token, cookieOptions)
+      res.cookie('token', token,{
+        httpOnly:true,
+        secure: false
+      })
         .send({ success: true })
     })
 
@@ -122,7 +128,7 @@ async function run() {
       res.json(result);
     });
 
-    app.get("/addedtask",verify,  async (req, res) => {
+    app.get("/addedtask",  async (req, res) => {
       try {
         const tasks = await taskCollection.find().toArray();
         res.send(tasks);
